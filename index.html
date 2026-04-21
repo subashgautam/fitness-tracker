@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IRONLOG — Fitness Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- ─── SIDEBAR ─────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-text">IRON<span class="logo-accent">LOG</span></span>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">☰</button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-icon">⚡</span><span class="nav-label">Dashboard</span>
+      </button>
+      <button class="nav-item" data-view="workout">
+        <span class="nav-icon">🏋️</span><span class="nav-label">Workout</span>
+      </button>
+      <button class="nav-item" data-view="cardio">
+        <span class="nav-icon">🏃</span><span class="nav-label">Cardio</span>
+      </button>
+      <button class="nav-item" data-view="history">
+        <span class="nav-icon">📊</span><span class="nav-label">Progress</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-date">
+      <span id="currentDate"></span>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN CONTENT ───────────────────────────────── -->
+  <main class="main-content" id="mainContent">
+
+    <!-- ─── DASHBOARD VIEW ─── -->
+    <section class="view active" id="view-dashboard">
+      <header class="page-header">
+        <h1 class="page-title">Dashboard</h1>
+        <button class="btn btn-primary" id="quickAddBtn">+ Quick Add Exercise</button>
+      </header>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Today's Volume</div>
+          <div class="stat-value" id="statTodayVolume">0 kg</div>
+          <div class="stat-sub">sets × reps × weight</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Weekly Volume</div>
+          <div class="stat-value" id="statWeeklyVolume">0 kg</div>
+          <div class="stat-sub">last 7 days</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Workouts This Week</div>
+          <div class="stat-value" id="statWorkoutsWeek">0</div>
+          <div class="stat-sub">sessions logged</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Cardio This Week</div>
+          <div class="stat-value" id="statCardioWeek">0 min</div>
+          <div class="stat-sub">total duration</div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Weekly Volume</h2>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="weeklyVolumeChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Recent Activity</h2>
+          </div>
+          <div id="recentActivity" class="activity-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── WORKOUT VIEW ─── -->
+    <section class="view" id="view-workout">
+      <header class="page-header">
+        <h1 class="page-title">Workout Planner</h1>
+        <div class="header-actions">
+          <button class="btn btn-ghost" id="duplicateWorkoutBtn">⎘ Duplicate Last</button>
+          <button class="btn btn-primary" id="addDayBtn">+ Add Day</button>
+        </div>
+      </header>
+
+      <!-- Day tabs -->
+      <div class="day-tabs" id="dayTabs"></div>
+
+      <!-- Day panels -->
+      <div id="dayPanels"></div>
+    </section>
+
+    <!-- ─── CARDIO VIEW ─── -->
+    <section class="view" id="view-cardio">
+      <header class="page-header">
+        <h1 class="page-title">Cardio Log</h1>
+      </header>
+
+      <div class="card cardio-log-form">
+        <h2 class="card-title">Log Session</h2>
+        <div class="cardio-form-grid">
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select class="form-input" id="cardioType">
+              <option value="running">🏃 Running</option>
+              <option value="treadmill">🏃 Treadmill</option>
+              <option value="cycling">🚴 Cycling</option>
+              <option value="stairmaster">🪜 Stairmaster</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="cardioDate" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration (min)</label>
+            <input type="number" class="form-input" id="cardioDuration" placeholder="30" min="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Distance (km) <span class="optional">optional</span></label>
+            <input type="number" class="form-input" id="cardioDistance" placeholder="5.0" step="0.1" min="0" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Calories <span class="optional">optional</span></label>
+            <input type="number" class="form-input" id="cardioCalories" placeholder="250" min="0" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes <span class="optional">optional</span></label>
+            <input type="text" class="form-input" id="cardioNotes" placeholder="Felt great!" />
+          </div>
+        </div>
+        <button class="btn btn-primary" id="logCardioBtn">Log Session</button>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Cardio History</h2>
+        <div id="cardioHistory" class="cardio-history-list"></div>
+      </div>
+    </section>
+
+    <!-- ─── PROGRESS / HISTORY VIEW ─── -->
+    <section class="view" id="view-history">
+      <header class="page-header">
+        <h1 class="page-title">Progress</h1>
+      </header>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Exercise History</h2>
+          <select class="form-input select-sm" id="exerciseSelector">
+            <option value="">— Select Exercise —</option>
+          </select>
+        </div>
+        <div class="chart-wrap" id="progressChartWrap" style="display:none">
+          <canvas id="progressChart"></canvas>
+        </div>
+        <div id="exerciseHistoryTable"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">All Workout Logs</h2>
+        <div id="allWorkoutLogs"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ─── QUICK ADD MODAL ─── -->
+  <div class="modal-overlay" id="quickAddModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Quick Add Exercise</h2>
+        <button class="modal-close" id="closeQuickAdd">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Day</label>
+          <select class="form-input" id="qaDaySelect"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Exercise Name</label>
+          <input type="text" class="form-input" id="qaExerciseName" placeholder="Bench Press" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Muscle</label>
+          <input type="text" class="form-input" id="qaTarget" placeholder="Chest" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Sets</label>
+            <input type="number" class="form-input" id="qaSets" value="3" min="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reps</label>
+            <input type="number" class="form-input" id="qaReps" value="10" min="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Weight (kg)</label>
+            <input type="number" class="form-input" id="qaWeight" value="0" min="0" step="0.5" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="cancelQuickAdd">Cancel</button>
+        <button class="btn btn-primary" id="confirmQuickAdd">Add Exercise</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TOAST NOTIFICATION ─── -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
