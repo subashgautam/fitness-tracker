@@ -1,71 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FitTrack Pro</title>
+  <title>FitTrack Pro - 5 Day Split</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
   <header class="app-header">
-    <h1>🏋️ FitTrack Pro</h1>
+    <div class="brand">
+      <h1>🏋️ FitTrack Pro</h1>
+      <p class="subtitle">5-Day Split • Auto-Log • Weekly Progress</p>
+    </div>
     <div class="header-controls">
-      <button id="btn-add-day" class="btn btn-accent">+ Add Workout Day</button>
+      <button id="btn-reset-week" class="btn btn-secondary" title="Start new tracking week">🔄 New Week</button>
       <button id="btn-theme" class="btn btn-secondary">☀️ Light Mode</button>
     </div>
   </header>
 
   <main id="app-container">
-    <!-- Days/Workouts Section -->
+    <!-- Days Grid -->
     <section id="days-section">
-      <h2>Strength Workouts</h2>
       <div id="days-grid" class="grid-container"></div>
     </section>
 
-    <!-- Cardio Section -->
-    <section id="cardio-section" class="section-card">
-      <h2>🚴 Cardio Log</h2>
-      <form id="cardio-form" class="inline-form">
-        <select name="type" required>
-          <option value="Running">Running</option>
-          <option value="Cycling">Cycling</option>
-          <option value="Stairmaster">Stairmaster</option>
-        </select>
-        <input type="number" name="duration" placeholder="Duration (min)" min="1" required>
-        <input type="number" name="distance" placeholder="Distance (km, opt)">
-        <input type="number" name="calories" placeholder="Calories (opt)">
-        <button type="submit" class="btn btn-accent">Log Cardio</button>
-      </form>
-      <div id="cardio-list"></div>
-    </section>
-
-    <!-- Analytics Section -->
-    <section id="analytics-section" class="section-card">
-      <h2>📈 Weekly Volume & Analytics</h2>
-      <div class="analytics-summary" id="analytics-summary"></div>
-      <div class="chart-wrapper">
-        <canvas id="volumeChart"></canvas>
+    <!-- Weekly Report & Analytics -->
+    <section id="report-section" class="section-card">
+      <h2>📊 Weekly Progress Report</h2>
+      <div class="report-grid">
+        <div class="report-card">
+          <h3>📅 This Week</h3>
+          <div id="weekly-summary" class="summary-list"></div>
+        </div>
+        <div class="report-card">
+          <h3>📈 Volume Trend</h3>
+          <div class="chart-wrapper">
+            <canvas id="volumeChart"></canvas>
+          </div>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- Quick Add Modal -->
-  <dialog id="quick-add-modal">
-    <form id="quick-add-form">
-      <h3>Add Exercise</h3>
-      <input type="hidden" id="quick-add-target-day">
-      <input type="text" id="ex-name" placeholder="Exercise Name" required>
-      <input type="text" id="ex-target" placeholder="Target Muscle (e.g., Chest)" required>
-      <input type="number" id="ex-sets" placeholder="Sets" value="3" min="1" required>
-      <input type="number" id="ex-reps" placeholder="Reps" value="10" min="1" required>
-      <input type="number" id="ex-weight" placeholder="Weight (kg)" min="0">
+  <!-- Configure Day Modal -->
+  <dialog id="config-modal">
+    <form id="config-form">
+      <h3 id="config-title">Configure Exercises</h3>
+      <p class="hint">Select exercises to include in this day's schedule.</p>
+      <div id="config-list" class="checkbox-list"></div>
       <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('quick-add-modal').close()">Cancel</button>
-        <button type="submit" class="btn btn-accent">Add to Day</button>
+        <button type="button" class="btn btn-secondary" id="btn-cancel-config">Cancel</button>
+        <button type="submit" class="btn btn-accent">Save Schedule</button>
       </div>
     </form>
   </dialog>
+
+  <script>
+    // Inline theme init to prevent flash
+    const savedTheme = localStorage.getItem('fittrack_pro_v1_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
 </body>
 </html>
