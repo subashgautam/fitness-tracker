@@ -1,105 +1,31 @@
-# IRONLOG — Fitness Tracker
+# 🏋️ FitTrack Pro - 5-Day Split Tracker
 
-A fully static, single-page fitness tracker for strength training and cardio. No backend, no build step, no dependencies to install. Works entirely in the browser with localStorage.
+A zero-backend, static fitness tracker designed for GitHub Pages. Track your 5-day split, rotate exercises weekly, auto-save inputs, and generate weekly progress reports.
 
----
+## ✨ Features
+- 📅 **Exact 5-Day Split**: Push, Pull, Legs+Abs, Upper, Lower pre-loaded.
+- 🔄 **Weekly Rotation**: Click `⚙️ Configure` on any day to toggle exercises in/out of your current schedule. Perfect for splitting heavy days across weeks.
+- ✅ **Instant Logging**: Checkboxes mark exercises done and log them with today's date, weight, sets, and reps.
+- 📊 **Weekly Report**: Shows volume per day, total weekly kg lifted, and a 7-day trend chart.
+- 💾 **Auto-Save & Offline**: All data persists in `localStorage`. Works without internet after first load.
+- 🌗 **Dark/Light Mode**: Seamless toggle with saved preference.
+- 📱 **Fully Responsive**: Mobile-optimized tables and clean UI.
 
-## Features
+## 🚀 Deploy to GitHub Pages
+1. Create a new GitHub repo.
+2. Upload `index.html`, `style.css`, `app.js`, `README.md`.
+3. Go to **Settings → Pages → Source → Deploy from branch → `main` → `/ (root)`**.
+4. Live at: `https://YOUR_USERNAME.github.io/REPO_NAME/`
 
-- **3-Day Split Planner** (Push / Pull / Legs) — pre-loaded with exercises
-- **Inline editing** for sets, reps and weight
-- **Per-exercise volume** (sets × reps × weight) calculated live
-- **Add / remove** exercises and days dynamically
-- **Quick Add** modal for fast exercise entry
-- **Duplicate previous workout** to reuse last session's weights
-- **Cardio log** — Running, Treadmill, Cycling, Stairmaster with duration / distance / calories
-- **Progress charts** — max weight and volume per exercise over time
-- **Weekly volume bar chart** on the dashboard
-- **Auto-save** — all changes persist instantly via localStorage
-- **Dark industrial UI** — mobile responsive
+## 🛠️ How It Works
+- **Rotation System**: `LIBRARY` stores all exercises. Each day tracks `activeIds` (what you want this week). Configure modal updates this list instantly.
+- **Logging**: Checking a box adds a record to `state.logs` with today's timestamp. Unchecking removes it. Prevents duplicate daily entries.
+- **Analytics**: Calculates `sets × reps × weight` for the last 7 days. Chart.js renders a smooth volume trend line.
+- **Persistence**: `localStorage` saves state on every `input` or `change`. No server required.
 
----
+## 🧩 Tips
+- Click `✅ Log All` to quickly mark your entire session as done.
+- Use `🔄 New Week` to reset checkboxes for the next training cycle without losing history.
+- Clear data: DevTools → Application → Local Storage → Delete `fittrack_pro_v1`.
 
-## Project Structure
-
-```
-fitness-tracker/
-├── index.html     # App shell + markup
-├── style.css      # All styles (CSS variables, responsive)
-├── app.js         # All logic (modular sections, no build required)
-└── README.md
-```
-
----
-
-## Running Locally
-
-Just open `index.html` in any modern browser — no server needed.
-
-```bash
-# Optional: serve with Python for a local server experience
-python3 -m http.server 8080
-# then open http://localhost:8080
-```
-
----
-
-## Deploying to GitHub Pages
-
-### Option A — Repository root
-
-1. Create a new GitHub repository (e.g. `fitness-tracker`)
-2. Upload the three files (`index.html`, `style.css`, `app.js`) to the root
-3. Go to **Settings → Pages**
-4. Under **Source**, select `Deploy from a branch`, choose `main` and `/ (root)`
-5. Click **Save** — your site will be live at:
-   `https://<your-username>.github.io/<repo-name>/`
-
-### Option B — GitHub CLI
-
-```bash
-git init
-git add .
-git commit -m "init: IRONLOG fitness tracker"
-gh repo create fitness-tracker --public --push --source=.
-# Then enable Pages in repo settings as above
-```
-
-### Option C — Deploy via drag-and-drop (no Git)
-
-Use [GitHub.dev](https://github.dev) or upload files directly through the GitHub web UI, then enable Pages in settings.
-
----
-
-## Data Storage
-
-All data is stored in your browser's **localStorage** under these keys:
-
-| Key | Contents |
-|---|---|
-| `ironlog_days` | Workout days and all exercises |
-| `ironlog_workout_logs` | Historical workout snapshots by date |
-| `ironlog_cardio` | Cardio session log |
-
-Data persists across page refreshes and browser restarts. To reset, open DevTools → Application → Local Storage → delete the three keys.
-
----
-
-## Customising
-
-- **Add your own exercises**: Click any day → `+ Add Exercise`, or use the `+ Quick Add Exercise` button on the Dashboard.
-- **Rename days**: Click the day name at the top of each panel and type a new name.
-- **Add new days**: Click `+ Add Day` in the Workout view.
-- **Change default data**: Edit the `defaultDays()` function in `app.js`.
-
----
-
-## Browser Support
-
-Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
-
----
-
-## License
-
-MIT — use freely, no attribution required.
+*Built for reliability, simplicity, and serious lifters.*
