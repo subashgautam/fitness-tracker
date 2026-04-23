@@ -1,329 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IRONLOG — Fitness Tracker</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitTrack Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-
-  <!-- ═══════════════════════════════════════════════
-       TOP NAV BAR — clear structure, always visible
-  ════════════════════════════════════════════════ -->
-  <header class="topnav" id="topnav">
-    <div class="topnav-logo">IRON<span class="logo-accent">LOG</span></div>
-
-    <nav class="topnav-links" role="navigation" aria-label="Main navigation">
-      <button class="tnav-item active" data-view="dashboard">
-        <span class="tnav-icon">⚡</span><span class="tnav-label">Dashboard</span>
-      </button>
-      <button class="tnav-item" data-view="workout">
-        <span class="tnav-icon">🏋️</span><span class="tnav-label">Workouts</span>
-      </button>
-      <button class="tnav-item" data-view="cardio">
-        <span class="tnav-icon">🏃</span><span class="tnav-label">Cardio</span>
-      </button>
-      <button class="tnav-item" data-view="history">
-        <span class="tnav-icon">📊</span><span class="tnav-label">History</span>
-      </button>
-    </nav>
-
-    <div class="topnav-right">
-      <span class="topnav-date" id="currentDate"></span>
-      <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
+  <header class="app-header">
+    <h1>🏋️ FitTrack Pro</h1>
+    <div class="header-controls">
+      <button id="btn-add-day" class="btn btn-accent">+ Add Workout Day</button>
+      <button id="btn-theme" class="btn btn-secondary">☀️ Light Mode</button>
     </div>
   </header>
 
-  <!-- Mobile slide-down drawer -->
-  <div class="mobile-drawer" id="mobileDrawer" aria-hidden="true">
-    <button class="drawer-item" data-view="dashboard" data-drawer>⚡ Dashboard</button>
-    <button class="drawer-item" data-view="workout"   data-drawer>🏋️ Workouts</button>
-    <button class="drawer-item" data-view="cardio"    data-drawer>🏃 Cardio</button>
-    <button class="drawer-item" data-view="history"   data-drawer>📊 History</button>
-  </div>
-  <div class="drawer-overlay" id="drawerOverlay"></div>
-
-  <!-- ═══════════════════════════════════════════════
-       MAIN CONTENT
-  ════════════════════════════════════════════════ -->
-  <main class="main-content">
-
-    <!-- ─── DASHBOARD ──────────────────────────── -->
-    <section class="view active" id="view-dashboard">
-      <header class="page-header">
-        <div>
-          <h1 class="page-title">Dashboard</h1>
-          <p class="page-sub" id="dashGreeting"></p>
-        </div>
-        <button class="btn btn-primary" id="quickAddBtn">+ Quick Add</button>
-      </header>
-
-      <div class="stats-grid">
-        <div class="stat-card accent-top">
-          <div class="stat-label">Today's Volume</div>
-          <div class="stat-value" id="statTodayVolume">0 kg</div>
-          <div class="stat-sub">sets × reps × weight</div>
-        </div>
-        <div class="stat-card accent-top">
-          <div class="stat-label">Weekly Volume</div>
-          <div class="stat-value" id="statWeeklyVolume">0 kg</div>
-          <div class="stat-delta" id="statVolDelta"></div>
-        </div>
-        <div class="stat-card accent-top">
-          <div class="stat-label">Workouts This Week</div>
-          <div class="stat-value" id="statWorkoutsWeek">0</div>
-          <div class="stat-sub">sessions logged</div>
-        </div>
-        <div class="stat-card accent-top">
-          <div class="stat-label">Cardio This Week</div>
-          <div class="stat-value" id="statCardioWeek">0 min</div>
-          <div class="stat-sub">total duration</div>
-        </div>
-      </div>
-
-      <div class="dashboard-grid">
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Weekly Volume</h2>
-            <span class="card-badge" id="dashWeekRange"></span>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="weeklyVolumeChart"></canvas>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Recent Activity</h2>
-          </div>
-          <div id="recentActivity" class="activity-list"></div>
-        </div>
-      </div>
+  <main id="app-container">
+    <!-- Days/Workouts Section -->
+    <section id="days-section">
+      <h2>Strength Workouts</h2>
+      <div id="days-grid" class="grid-container"></div>
     </section>
 
-    <!-- ─── WORKOUTS ────────────────────────────── -->
-    <section class="view" id="view-workout">
-      <header class="page-header">
-        <h1 class="page-title">Workouts</h1>
-        <div class="header-actions">
-          <button class="btn btn-ghost" id="duplicateWorkoutBtn">⎘ Duplicate Last</button>
-          <button class="btn btn-primary" id="addDayBtn">+ Add Day</button>
-        </div>
-      </header>
-
-      <div class="day-tabs" id="dayTabs"></div>
-      <div id="dayPanels"></div>
+    <!-- Cardio Section -->
+    <section id="cardio-section" class="section-card">
+      <h2>🚴 Cardio Log</h2>
+      <form id="cardio-form" class="inline-form">
+        <select name="type" required>
+          <option value="Running">Running</option>
+          <option value="Cycling">Cycling</option>
+          <option value="Stairmaster">Stairmaster</option>
+        </select>
+        <input type="number" name="duration" placeholder="Duration (min)" min="1" required>
+        <input type="number" name="distance" placeholder="Distance (km, opt)">
+        <input type="number" name="calories" placeholder="Calories (opt)">
+        <button type="submit" class="btn btn-accent">Log Cardio</button>
+      </form>
+      <div id="cardio-list"></div>
     </section>
 
-    <!-- ─── CARDIO ──────────────────────────────── -->
-    <section class="view" id="view-cardio">
-      <header class="page-header">
-        <h1 class="page-title">Cardio</h1>
-      </header>
-
-      <!-- Weekly summary -->
-      <div class="stats-grid stats-grid-3">
-        <div class="stat-card accent-top">
-          <div class="stat-label">Weekly Duration</div>
-          <div class="stat-value" id="cardioWeekDur">0 min</div>
-        </div>
-        <div class="stat-card accent-top">
-          <div class="stat-label">Weekly Distance</div>
-          <div class="stat-value" id="cardioWeekDist">0 km</div>
-        </div>
-        <div class="stat-card accent-top">
-          <div class="stat-label">Sessions This Week</div>
-          <div class="stat-value" id="cardioWeekSess">0</div>
-        </div>
-      </div>
-
-      <!-- Log form -->
-      <div class="card">
-        <h2 class="card-title" style="margin-bottom:20px">Log Session</h2>
-        <div class="cardio-form-grid">
-
-          <div class="form-group">
-            <label class="form-label">Type</label>
-            <select class="form-input" id="cardioType">
-              <option value="running">🏃 Running (Outdoor)</option>
-              <option value="treadmill">🏃 Treadmill</option>
-              <option value="cycling">🚴 Cycling</option>
-              <option value="stairmaster">🪜 Stairmaster</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Date</label>
-            <input type="date" class="form-input" id="cardioDate" />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Duration (min) <span class="req-star">*</span></label>
-            <input type="number" class="form-input" id="cardioDuration" placeholder="30" min="1" max="600" />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Distance (km) <span class="optional">optional</span></label>
-            <input type="number" class="form-input" id="cardioDistance" placeholder="5.0" step="0.01" min="0" max="500" />
-          </div>
-
-          <!-- Pace & Speed (auto-computed from duration + distance) -->
-          <div class="form-group">
-            <label class="form-label">Pace (min/km) <span class="optional">auto-calc</span></label>
-            <input type="text" class="form-input form-input-auto" id="cardioPace" placeholder="—" readonly tabindex="-1" />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Speed (km/h) <span class="optional">auto-calc</span></label>
-            <input type="text" class="form-input form-input-auto" id="cardioSpeed" placeholder="—" readonly tabindex="-1" />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Calories <span class="optional">optional</span></label>
-            <input type="number" class="form-input" id="cardioCalories" placeholder="250" min="0" max="5000" />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Notes <span class="optional">optional</span></label>
-            <input type="text" class="form-input" id="cardioNotes" placeholder="Felt strong!" />
-          </div>
-
-        </div>
-        <button class="btn btn-primary btn-lg" id="logCardioBtn">Log Session</button>
-      </div>
-
-      <!-- History -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">Cardio History</h2>
-          <select class="form-input select-sm" id="cardioFilter">
-            <option value="">All Types</option>
-            <option value="running">Running</option>
-            <option value="treadmill">Treadmill</option>
-            <option value="cycling">Cycling</option>
-            <option value="stairmaster">Stairmaster</option>
-          </select>
-        </div>
-        <div id="cardioHistory" class="cardio-history-list"></div>
+    <!-- Analytics Section -->
+    <section id="analytics-section" class="section-card">
+      <h2>📈 Weekly Volume & Analytics</h2>
+      <div class="analytics-summary" id="analytics-summary"></div>
+      <div class="chart-wrapper">
+        <canvas id="volumeChart"></canvas>
       </div>
     </section>
-
-    <!-- ─── HISTORY / PROGRESS ─────────────────── -->
-    <section class="view" id="view-history">
-      <header class="page-header">
-        <h1 class="page-title">History</h1>
-      </header>
-
-      <!-- Exercise progress chart -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">Exercise Progress</h2>
-          <select class="form-input select-sm" id="exerciseSelector">
-            <option value="">— Pick an exercise —</option>
-          </select>
-        </div>
-        <div id="progressChartWrap" class="chart-wrap" style="display:none">
-          <canvas id="progressChart"></canvas>
-        </div>
-        <div id="exerciseHistoryTable"></div>
-      </div>
-
-      <!-- Full workout log -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">Workout Log</h2>
-          <div class="filter-row">
-            <select class="form-input select-sm" id="logFilterDay">
-              <option value="">All Days</option>
-            </select>
-            <input type="month" class="form-input select-sm" id="logFilterMonth" title="Filter by month" />
-          </div>
-        </div>
-        <div id="allWorkoutLogs"></div>
-      </div>
-    </section>
-
   </main>
 
-  <!-- ═══════════════════════════════════════════════
-       MODALS
-  ════════════════════════════════════════════════ -->
-
-  <!-- Quick Add -->
-  <div class="modal-overlay" id="quickAddModal" role="dialog" aria-modal="true" aria-labelledby="qaTitle">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 class="modal-title" id="qaTitle">Quick Add Exercise</h2>
-        <button class="modal-close" id="closeQuickAdd" aria-label="Close">✕</button>
+  <!-- Quick Add Modal -->
+  <dialog id="quick-add-modal">
+    <form id="quick-add-form">
+      <h3>Add Exercise</h3>
+      <input type="hidden" id="quick-add-target-day">
+      <input type="text" id="ex-name" placeholder="Exercise Name" required>
+      <input type="text" id="ex-target" placeholder="Target Muscle (e.g., Chest)" required>
+      <input type="number" id="ex-sets" placeholder="Sets" value="3" min="1" required>
+      <input type="number" id="ex-reps" placeholder="Reps" value="10" min="1" required>
+      <input type="number" id="ex-weight" placeholder="Weight (kg)" min="0">
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('quick-add-modal').close()">Cancel</button>
+        <button type="submit" class="btn btn-accent">Add to Day</button>
       </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Day</label>
-          <select class="form-input" id="qaDaySelect"></select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Exercise Name <span class="req-star">*</span></label>
-          <input type="text" class="form-input" id="qaExerciseName" placeholder="e.g. Bench Press" autocomplete="off" />
-          <div class="field-error" id="qaNameError"></div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Target Muscle</label>
-          <input type="text" class="form-input" id="qaTarget" placeholder="e.g. Chest" />
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Sets <span class="req-star">*</span></label>
-            <input type="number" class="form-input" id="qaSets" value="3" min="1" max="20" />
-            <div class="field-error" id="qaSetsError"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Reps <span class="req-star">*</span></label>
-            <input type="number" class="form-input" id="qaReps" value="10" min="1" max="200" />
-            <div class="field-error" id="qaRepsError"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Weight (kg)</label>
-            <input type="number" class="form-input" id="qaWeight" value="0" min="0" max="1000" step="0.5" />
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-ghost" id="cancelQuickAdd">Cancel</button>
-        <button class="btn btn-primary" id="confirmQuickAdd">Add Exercise</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add Day (no browser prompt) -->
-  <div class="modal-overlay" id="addDayModal" role="dialog" aria-modal="true">
-    <div class="modal modal-sm">
-      <div class="modal-header">
-        <h2 class="modal-title">New Workout Day</h2>
-        <button class="modal-close" id="closeAddDay" aria-label="Close">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Day Name <span class="req-star">*</span></label>
-          <input type="text" class="form-input" id="newDayName" placeholder="e.g. Day 4 — Arms" maxlength="60" />
-          <div class="field-error" id="newDayNameError"></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-ghost" id="cancelAddDay">Cancel</button>
-        <button class="btn btn-primary" id="confirmAddDay">Create Day</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ─── NOTIFICATIONS ──────────────────────────── -->
-  <div class="toast"       id="toast"         role="status" aria-live="polite"></div>
-  <div class="save-pill"   id="saveIndicator" aria-live="polite"></div>
-
-  <script src="app.js"></script>
+    </form>
+  </dialog>
 </body>
 </html>
