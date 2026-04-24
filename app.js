@@ -1,8 +1,9 @@
 /**
  * FitTrack Pro - 5-Day Split Tracker
- * Handles: Exercise rotation, inline editing, auto-save, logging, weekly analytics
+ * Clean syntax, no template literal corruption risk
  */
 const STORAGE_KEY = 'fittrack_pro_v1';
+
 const LIBRARY = {
   day1: [
     {id:'d1_1', name:'Barbell Bench Press', muscle:'Chest'},
@@ -77,97 +78,117 @@ const LIBRARY = {
 };
 
 const App = {
-  state: {
-    days: [],
-    logs: [],
-    theme: 'dark',
-    weekStart: new Date().toISOString().split('T')[0]
-  },
+  state: { days: [], logs: [], theme: 'dark', weekStart: '' },
   chart: null,
   configDayId: null,
 
-  init() {
+  init: function() {
+    this.state.weekStart = new Date().toISOString().split('T')[0];
     this.loadState();
     this.renderDays();
     this.initChart();
     this.updateReport();
     this.setupEvents();
-    document.getElementById('btn-theme').textContent = this.state.theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+    var btn = document.getElementById('btn-theme');
+    if (btn) btn.textContent = this.state.theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
   },
 
-  loadState() {
-    const saved = localStorage.getItem(STORAGE_KEY);
+  loadState: function() {
+    var saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        const p = JSON.parse(saved);
+        var p = JSON.parse(saved);
         this.state.days = p.days || [];
         this.state.logs = p.logs || [];
-        this.state.weekStart = p.weekStart || this.state.weekStart;
+        if (p.theme) this.state.theme = p.theme;
+        if (p.weekStart) this.state.weekStart = p.weekStart;
       } catch (e) { this.seedDays(); }
-    } else {
-      this.seedDays();
-    }
+    } else { this.seedDays(); }
   },
 
-  seedDays() {
-    this.state.days = Object.keys(LIBRARY).map(key => ({
-      id: key,
-      name: key.replace('day', 'Day ').replace('1', '1 - Push').replace('2', '2 - Pull').replace('3', '3 - Legs + Abs').replace('4', '4 - Full Upper').replace('5', '5 - Full Lower'),
-      // Default: ALL exercises active, sets/reps/weight preset
-      activeIds: LIBRARY[key].map(e => e.id),
-      exercises: LIBRARY[key].map(e => ({ ...e, sets: e.muscle === 'Abs' ? 3 : 4, reps: e.muscle === 'Abs' ? 30 : 10, weight: 0, done: false }))
-    }));
+  seedDays: function() {
+    var self = this;
+    this.state.days = Object.keys(LIBRARY).map(function(key) {
+      var nameMap = {
+        'day1': 'Day 1 - Push', 'day2': 'Day 2 - Pull', 'day3': 'Day 3 - Legs + Abs',
+        'day4': 'Day 4 - Full Upper', 'day5': 'Day 5 - Full Lower'
+      };
+      return {
+        id: key,
+        name: nameMap[key] || key,
+        activeIds: LIBRARY[key].map(function(e) { return e.id; }),
+        exercises: LIBRARY[key].map(function(e) {
+          var isAbs = e.muscle === 'Abs';
+          return { 
+            id: e.id, name: e.name, muscle: e.muscle,
+            sets: isAbs ? 3 : 4, 
+            reps: isAbs ? 30 : 10, 
+            weight: 0, 
+            done: false 
+          };
+        })
+      };
+    });
     this.saveState();
   },
 
-  saveState() {
+  saveState: function() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
   },
 
-  getActiveExercises(dayId) {
-    const day = this.state.days.find(d => d.id === dayId);
+  getActiveExercises: function(dayId) {
+    var day = this.state.days.find(function(d) { return d.id === dayId; });
     if (!day) return [];
-    return day.exercises.filter(e => day.activeIds.includes(e.id));
+    return day.exercises.filter(function(e) { 
+      return day.activeIds.indexOf(e.id) !== -1; 
+    });
   },
 
-  renderDays() {
-    const grid = document.getElementById('days-grid');
+  renderDays: function() {
+    var grid = document.getElementById('days-grid');
+    if (!grid) return;
     grid.innerHTML = '';
-    this.state.days.forEach(day => {
-      const active = this.getActiveExercises(day.id);
-      const card = document.createElement('div');
+    var self = this;
+    
+    this.state.days.forEach(function(day) {
+      var active = self.getActiveExercises(day.id);
+      var card = document.createElement('div');
       card.className = 'section-card';
-      card.innerHTML = `
-        <div class="day-header">
-          <h3>${day.name}</h3>
-          <div>
-            <button class="btn btn-secondary btn-sm" data-action="configure" data-day="${day.id}">⚙️ Configure</button>
-            <button class="btn btn-accent btn-sm" data-action="log-all" data-day="${day.id}">✅ Log All</button>
-          </div>
-        </div>
-        <table class="workout-table" data-day="${day.id}">
-          <thead><tr><th>✅</th><th>Exercise</th><th>Target</th><th>Sets</th><th>Reps</th><th>Weight</th></tr></thead>
-          <tbody>
-            ${active.length === 0 ? '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:1rem;">No exercises selected. Configure to add.</td></tr>' : ''}
-            ${active.map(ex => `
-              <tr data-ex="${ex.id}">
-                <td data-label="Done"><input type="checkbox" class="log-toggle" data-day="${day.id}" data-ex="${ex.id}" ${ex.done ? 'checked' : ''}></td>
-                <td data-label="Exercise">${ex.name}</td>
-                <td data-label="Target">${ex.muscle}</td>
-                <td data-label="Sets"><input type="number" value="${ex.sets}" min="1" data-field="sets" data-day="${day.id}" data-ex="${ex.id}"></td>
-                <td data-label="Reps"><input type="number" value="${ex.reps}" min="1" data-field="reps" data-day="${day.id}" data-ex="${ex.id}"></td>
-                <td data-label="Weight"><input type="number" value="${ex.weight}" min="0" data-field="weight" data-day="${day.id}" data-ex="${ex.id}"></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
+      
+      var header = '<div class="day-header">' +
+        '<h3>' + day.name + '</h3>' +
+        '<div>' +
+        '<button class="btn btn-secondary btn-sm" data-action="configure" data-day="' + day.id + '">⚙️ Configure</button>' +
+        '<button class="btn btn-accent btn-sm" data-action="log-all" data-day="' + day.id + '">✅ Log All</button>' +
+        '</div></div>';
+      
+      var tableStart = '<table class="workout-table" data-day="' + day.id + '">' +
+        '<thead><tr><th>✅</th><th>Exercise</th><th>Target</th><th>Sets</th><th>Reps</th><th>Weight</th></tr></thead><tbody>';
+      
+      var rows = '';
+      if (active.length === 0) {
+        rows = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:1rem">No exercises selected. Configure to add.</td></tr>';
+      } else {
+        active.forEach(function(ex) {
+          rows += '<tr data-ex="' + ex.id + '">' +
+            '<td data-label="Done"><input type="checkbox" class="log-toggle" data-day="' + day.id + '" data-ex="' + ex.id + '"' + (ex.done ? ' checked' : '') + '></td>' +
+            '<td data-label="Exercise">' + ex.name + '</td>' +
+            '<td data-label="Target">' + ex.muscle + '</td>' +
+            '<td data-label="Sets"><input type="number" value="' + ex.sets + '" min="1" data-field="sets" data-day="' + day.id + '" data-ex="' + ex.id + '"></td>' +
+            '<td data-label="Reps"><input type="number" value="' + ex.reps + '" min="1" data-field="reps" data-day="' + day.id + '" data-ex="' + ex.id + '"></td>' +
+            '<td data-label="Weight"><input type="number" value="' + ex.weight + '" min="0" data-field="weight" data-day="' + day.id + '" data-ex="' + ex.id + '"></td>' +
+            '</tr>';
+        });
+      }
+      
+      var tableEnd = '</tbody></table>';
+      card.innerHTML = header + tableStart + rows + tableEnd;
       grid.appendChild(card);
     });
   },
 
-  initChart() {
-    const ctx = document.getElementById('volumeChart');
+  initChart: function() {
+    var ctx = document.getElementById('volumeChart');
     if (!ctx) return;
     this.chart = new Chart(ctx.getContext('2d'), {
       type: 'line',
@@ -186,7 +207,7 @@ const App = {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+        plugins: { legend: { display: false } },
         scales: {
           x: { grid: { color: '#2a2e35' }, ticks: { color: '#9ca3af' } },
           y: { beginAtZero: true, grid: { color: '#2a2e35' }, ticks: { color: '#9ca3af' } }
@@ -195,37 +216,49 @@ const App = {
     });
   },
 
-  updateReport() {
-    const today = new Date();
-    const dates = [], volumes = [];
-    let weekVol = 0;
+  updateReport: function() {
+    var today = new Date();
+    var dates = [], volumes = [];
+    var weekVol = 0;
+    var self = this;
 
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today); d.setDate(d.getDate() - i);
-      const ds = d.toISOString().split('T')[0];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date(today);
+      d.setDate(d.getDate() - i);
+      var ds = d.toISOString().split('T')[0];
       dates.push(ds.slice(5));
-      let v = 0;
-      this.state.logs.filter(l => l.date === ds && l.completed).forEach(l => v += (l.sets * l.reps * l.weight));
-      weekVol += v; volumes.push(v);
+      
+      var v = 0;
+      this.state.logs.filter(function(l) { 
+        return l.date === ds && l.completed; 
+      }).forEach(function(l) { 
+        v += (l.sets * l.reps * l.weight); 
+      });
+      weekVol += v;
+      volumes.push(v);
     }
 
-    // Summary per day
-    const summary = document.getElementById('weekly-summary');
-    const dayCounts = this.state.logs.reduce((acc, l) => {
-      const day = this.state.days.find(d => d.id === l.dayId)?.name.split(' - ')[0] || 'Unknown';
-      acc[day] = (acc[day] || 0) + 1;
-      return acc;
-    }, {});
+    var summary = document.getElementById('weekly-summary');
+    if (summary) {
+      var dayCounts = {};
+      this.state.logs.forEach(function(l) {
+        var dayName = 'Unknown';
+        var dayObj = self.state.days.find(function(d) { return d.id === l.dayId; });
+        if (dayObj && dayObj.name) {
+          dayName = dayObj.name.split(' - ')[0];
+        }
+        dayCounts[dayName] = (dayCounts[dayName] || 0) + 1;
+      });
 
-    summary.innerHTML = `
-      <div class="summary-row"><span>Total Volume (7d)</span><span class="summary-val">${weekVol.toLocaleString()} kg</span></div>
-      <div class="summary-row"><span>Exercises Logged</span><span class="summary-val">${this.state.logs.length}</span></div>
-      ${Object.keys(LIBRARY).map(k => {
-        const name = k.replace('day', 'Day ');
-        const count = dayCounts[name] || 0;
-        return `<div class="summary-row"><span>${name}</span><span class="summary-val">${count} completed</span></div>`;
-      }).join('')}
-    `;
+      var html = '<div class="summary-row"><span>Total Volume (7d)</span><span class="summary-val">' + weekVol.toLocaleString() + ' kg</span></div>' +
+        '<div class="summary-row"><span>Exercises Logged</span><span class="summary-val">' + this.state.logs.length + '</span></div>';
+      
+      ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5'].forEach(function(name) {
+        var count = dayCounts[name] || 0;
+        html += '<div class="summary-row"><span>' + name + '</span><span class="summary-val">' + count + ' completed</span></div>';
+      });
+      summary.innerHTML = html;
+    }
 
     if (this.chart) {
       this.chart.data.labels = dates;
@@ -234,129 +267,176 @@ const App = {
     }
   },
 
-  setupEvents() {
-    // 1. Inline Input Auto-Save
-    document.addEventListener('input', (e) => {
+  setupEvents: function() {
+    var self = this;
+
+    // Input auto-save
+    document.addEventListener('input', function(e) {
       if (!e.target.matches('input[data-day][data-ex][data-field]')) return;
-      const { day, ex, field } = e.target.dataset;
-      const d = this.state.days.find(x => x.id === day);
+      var day = e.target.dataset.day;
+      var ex = e.target.dataset.ex;
+      var field = e.target.dataset.field;
+      var d = self.state.days.find(function(x) { return x.id === day; });
       if (!d) return;
-      const exRef = d.exercises.find(x => x.id === ex);
+      var exRef = d.exercises.find(function(x) { return x.id === ex; });
       if (!exRef) return;
       
-      const val = e.target.value;
-      exRef[field] = ['sets','reps','weight'].includes(field) ? (parseFloat(val) || 0) : val;
-      this.saveState();
+      var val = e.target.value;
+      if (field === 'sets' || field === 'reps' || field === 'weight') {
+        exRef[field] = parseFloat(val) || 0;
+      } else {
+        exRef[field] = val;
+      }
+      self.saveState();
     });
 
-    // 2. Checkbox Logging
-    document.addEventListener('change', (e) => {
+    // Checkbox logging
+    document.addEventListener('change', function(e) {
       if (!e.target.matches('.log-toggle')) return;
-      const { day, ex } = e.target.dataset;
-      const d = this.state.days.find(x => x.id === day);
-      const exRef = d?.exercises.find(x => x.id === ex);
+      var day = e.target.dataset.day;
+      var ex = e.target.dataset.ex;
+      var d = self.state.days.find(function(x) { return x.id === day; });
+      if (!d) return;
+      var exRef = d.exercises.find(function(x) { return x.id === ex; });
       if (!exRef) return;
 
       exRef.done = e.target.checked;
-      const today = new Date().toISOString().split('T')[0];
+      var today = new Date().toISOString().split('T')[0];
       
       if (e.target.checked) {
-        const exists = this.state.logs.some(l => l.date === today && l.dayId === day && l.exId === ex);
+        var exists = self.state.logs.some(function(l) {
+          return l.date === today && l.dayId === day && l.exId === ex;
+        });
         if (!exists) {
-          this.state.logs.push({
+          self.state.logs.push({
             date: today, dayId: day, exId: ex,
-            name: exRef.name, sets: exRef.sets, reps: exRef.reps, weight: exRef.weight, completed: true
+            name: exRef.name, sets: exRef.sets, reps: exRef.reps, 
+            weight: exRef.weight, completed: true
           });
         }
       } else {
-        this.state.logs = this.state.logs.filter(l => !(l.date === today && l.dayId === day && l.exId === ex));
+        self.state.logs = self.state.logs.filter(function(l) {
+          return !(l.date === today && l.dayId === day && l.exId === ex);
+        });
       }
-      this.saveState();
+      self.saveState();
     });
 
-    // 3. Button Actions
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
+    // Button clicks
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('button');
       if (!btn) return;
-      const { action, day } = btn.dataset;
+      var action = btn.dataset.action;
+      var day = btn.dataset.day;
 
       if (action === 'configure') {
-        this.configDayId = day;
-        const modal = document.getElementById('config-modal');
-        document.getElementById('config-title').textContent = `Configure ${this.state.days.find(d => d.id === day)?.name || 'Day'}`;
-        const list = document.getElementById('config-list');
-        list.innerHTML = '';
-        
-        const lib = LIBRARY[day] || [];
-        const activeIds = this.state.days.find(d => d.id === day)?.activeIds || [];
-        lib.forEach(item => {
-          list.innerHTML += `
-            <label class="checkbox-item">
-              <input type="checkbox" value="${item.id}" ${activeIds.includes(item.id) ? 'checked' : ''}>
-              <span>${item.name} <small style="color:var(--text-muted)">(${item.muscle})</small></span>
-            </label>`;
-        });
-        modal.showModal();
+        self.configDayId = day;
+        var modal = document.getElementById('config-modal');
+        var title = document.getElementById('config-title');
+        var list = document.getElementById('config-list');
+        if (title && list) {
+          var dayObj = self.state.days.find(function(d) { return d.id === day; });
+          title.textContent = 'Configure ' + (dayObj ? dayObj.name : 'Day');
+          list.innerHTML = '';
+          var lib = LIBRARY[day] || [];
+          var activeIds = (dayObj && dayObj.activeIds) || [];
+          lib.forEach(function(item) {
+            var checked = activeIds.indexOf(item.id) !== -1 ? 'checked' : '';
+            list.innerHTML += '<label class="checkbox-item">' +
+              '<input type="checkbox" value="' + item.id + '" ' + checked + '>' +
+              '<span>' + item.name + ' <small style="color:var(--text-muted)">(' + item.muscle + ')</small></span>' +
+              '</label>';
+          });
+          modal.showModal();
+        }
       }
+      
       if (action === 'log-all') {
-        const today = new Date().toISOString().split('T')[0];
-        const active = this.getActiveExercises(day);
-        active.forEach(ex => {
-          const exists = this.state.logs.some(l => l.date === today && l.dayId === day && l.exId === ex.id);
+        var today = new Date().toISOString().split('T')[0];
+        var active = self.getActiveExercises(day);
+        active.forEach(function(ex) {
+          var exists = self.state.logs.some(function(l) {
+            return l.date === today && l.dayId === day && l.exId === ex.id;
+          });
           if (!exists) {
-            this.state.logs.push({ date: today, dayId: day, exId: ex.id, name: ex.name, sets: ex.sets, reps: ex.reps, weight: ex.weight, completed: true });
+            self.state.logs.push({ 
+              date: today, dayId: day, exId: ex.id, name: ex.name,
+              sets: ex.sets, reps: ex.reps, weight: ex.weight, completed: true 
+            });
           }
           ex.done = true;
         });
-        this.renderDays();
-        this.saveState();
+        self.renderDays();
+        self.saveState();
       }
     });
 
-    // 4. Config Modal Submit
-    document.getElementById('config-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const checked = Array.from(document.querySelectorAll('#config-list input:checked')).map(cb => cb.value);
-      const d = this.state.days.find(x => x.id === this.configDayId);
-      if (d) {
-        d.activeIds = checked;
-        // Preserve existing values, reset unchecked to defaults
-        d.exercises.forEach(ex => {
-          if (!checked.includes(ex.id)) {
-            ex.sets = ex.muscle === 'Abs' ? 3 : 4;
-            ex.reps = ex.muscle === 'Abs' ? 30 : 10;
-            ex.weight = 0;
-            ex.done = false;
-          }
-        });
-      }
-      document.getElementById('config-modal').close();
-      this.renderDays();
-      this.saveState();
-    });
+    // Config form submit
+    var configForm = document.getElementById('config-form');
+    if (configForm) {
+      configForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var checked = Array.from(document.querySelectorAll('#config-list input:checked'))
+          .map(function(cb) { return cb.value; });
+        var d = self.state.days.find(function(x) { return x.id === self.configDayId; });
+        if (d) {
+          d.activeIds = checked;
+          d.exercises.forEach(function(ex) {
+            if (checked.indexOf(ex.id) === -1) {
+              var isAbs = ex.muscle === 'Abs';
+              ex.sets = isAbs ? 3 : 4;
+              ex.reps = isAbs ? 30 : 10;
+              ex.weight = 0;
+              ex.done = false;
+            }
+          });
+        }
+        document.getElementById('config-modal').close();
+        self.renderDays();
+        self.saveState();
+      });
+    }
 
-    // 5. Theme Toggle
-    document.getElementById('btn-theme').addEventListener('click', () => {
-      this.state.theme = this.state.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', this.state.theme);
-      document.getElementById('btn-theme').textContent = this.state.theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-      this.saveState();
-      if (this.chart) {
-        this.chart.data.datasets[0].borderColor = this.state.theme === 'dark' ? '#3b82f6' : '#2563eb';
-        this.chart.update();
-      }
-    });
+    // Cancel modal
+    var cancelBtn = document.getElementById('btn-cancel-config');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function() {
+        document.getElementById('config-modal').close();
+      });
+    }
 
-    // 6. New Week Button
-    document.getElementById('btn-reset-week').addEventListener('click', () => {
-      if(confirm('Start a new week? This resets all "done" checkboxes but keeps your exercise library and history.')) {
-        this.state.days.forEach(d => d.exercises.forEach(e => e.done = false));
-        this.state.weekStart = new Date().toISOString().split('T')[0];
-        this.renderDays();
-        this.saveState();
-      }
-    });
+    // Theme toggle
+    var themeBtn = document.getElementById('btn-theme');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', function() {
+        self.state.theme = self.state.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', self.state.theme);
+        themeBtn.textContent = self.state.theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+        self.saveState();
+        if (self.chart) {
+          self.chart.data.datasets[0].borderColor = self.state.theme === 'dark' ? '#3b82f6' : '#2563eb';
+          self.chart.update();
+        }
+      });
+    }
+
+    // New week button
+    var resetBtn = document.getElementById('btn-reset-week');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function() {
+        if (confirm('Start a new week? This resets checkboxes but keeps history.')) {
+          self.state.days.forEach(function(d) {
+            d.exercises.forEach(function(e) { e.done = false; });
+          });
+          self.state.weekStart = new Date().toISOString().split('T')[0];
+          self.renderDays();
+          self.saveState();
+        }
+      });
+    }
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => App.init());
+document.addEventListener('DOMContentLoaded', function() {
+  App.init();
+});
