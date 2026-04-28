@@ -1,66 +1,1525 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FitTrack Pro - 5 Day Split</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-  <script src="app.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitTrack Pro - Workout Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <style>
+        :root {
+            --bg: #0f0f1a;
+            --surface: #1a1a2e;
+            --surface2: #1e1e34;
+            --border: #2a2a3e;
+            --text: #e8e8e8;
+            --text2: #a0a0b8;
+            --text3: #707088;
+            --accent: #4fc3f7;
+            --accent2: #29b6f6;
+            --success: #66bb6a;
+            --danger: #ef5350;
+            --warning: #ffa726;
+            --header-bg: #141428;
+            --input-bg: #1a1a30;
+            --hover: #252542;
+            --completed: rgba(102, 187, 106, 0.18);
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+            --radius: 10px;
+            --radius-sm: 6px;
+            --transition: 0.2s ease;
+            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --font-mono: 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            line-height: 1.5;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== HEADER ===== */
+        .app-header {
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+        }
+        .header-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 10px 0;
+        }
+        .app-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--accent);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .app-logo span {
+            font-size: 1.6rem;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* ===== NAV TABS ===== */
+        .nav-tabs {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 20px 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .nav-tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text2);
+            transition: var(--transition);
+            user-select: none;
+            position: relative;
+        }
+        .nav-tab:hover {
+            background: var(--hover);
+            color: var(--text);
+        }
+        .nav-tab.active {
+            background: var(--accent);
+            color: #000;
+            font-weight: 600;
+            border-color: var(--accent);
+            box-shadow: 0 2px 8px rgba(79, 195, 247, 0.3);
+        }
+        .nav-tab.add-day-tab {
+            border: 1px dashed var(--border);
+            color: var(--text3);
+            font-size: 1.1rem;
+            padding: 8px 12px;
+            min-width: 36px;
+            text-align: center;
+        }
+        .nav-tab.add-day-tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: transparent;
+        }
+        .nav-tab .delete-day {
+            display: inline-block;
+            margin-left: 4px;
+            font-size: 0.7rem;
+            opacity: 0;
+            transition: var(--transition);
+            color: var(--danger);
+            cursor: pointer;
+            padding: 0 3px;
+        }
+        .nav-tab:hover .delete-day {
+            opacity: 0.7;
+        }
+        .nav-tab .delete-day:hover {
+            opacity: 1;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title .badge {
+            font-size: 0.75rem;
+            background: var(--accent);
+            color: #000;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        /* ===== TABLE (Spreadsheet Style) ===== */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+            font-size: 0.9rem;
+        }
+        thead th {
+            background: var(--surface2);
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text2);
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+        thead th:last-child {
+            text-align: center;
+            width: 50px;
+        }
+        thead th.col-actions {
+            width: 40px;
+            text-align: center;
+        }
+        tbody td {
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tbody tr {
+            transition: var(--transition);
+        }
+        tbody tr:hover {
+            background: var(--hover);
+        }
+        tbody tr.completed-row {
+            background: var(--completed);
+        }
+        tbody tr.completed-row td {
+            color: var(--text3);
+        }
+        tbody tr.completed-row input {
+            color: var(--text3);
+        }
+
+        /* Inputs inside table */
+        .cell-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid transparent;
+            color: var(--text);
+            padding: 8px 6px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 0.88rem;
+            transition: var(--transition);
+            min-width: 60px;
+        }
+        .cell-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: #1e1e38;
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
+        }
+        .cell-input.name-input {
+            min-width: 140px;
+            font-weight: 500;
+        }
+        .cell-input.target-input {
+            min-width: 100px;
+        }
+        .cell-input.number-input {
+            width: 60px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+        .cell-input.weight-input {
+            width: 70px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        /* Checkbox */
+        .check-cell {
+            text-align: center;
+        }
+        .custom-checkbox {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            accent-color: var(--success);
+            transform: scale(1.2);
+            border-radius: 4px;
+        }
+
+        /* Delete button */
+        .btn-delete-ex {
+            background: none;
+            border: none;
+            color: var(--text3);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            line-height: 1;
+        }
+        .btn-delete-ex:hover {
+            color: var(--danger);
+            background: rgba(239, 83, 80, 0.1);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: 9px 18px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            font-family: var(--font);
+            transition: var(--transition);
+            white-space: nowrap;
+            letter-spacing: 0.2px;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 2px 8px rgba(79, 195, 247, 0.25);
+        }
+        .btn-primary:hover {
+            background: var(--accent2);
+            box-shadow: 0 4px 14px rgba(79, 195, 247, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(79, 195, 247, 0.05);
+        }
+        .btn-success {
+            background: var(--success);
+            color: #000;
+            box-shadow: 0 2px 8px rgba(102, 187, 106, 0.25);
+        }
+        .btn-success:hover {
+            box-shadow: 0 4px 14px rgba(102, 187, 106, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-danger {
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+        .btn-danger:hover {
+            background: rgba(239, 83, 80, 0.1);
+        }
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 0.78rem;
+            border-radius: 15px;
+        }
+        .btn-xs {
+            padding: 3px 10px;
+            font-size: 0.7rem;
+            border-radius: 12px;
+        }
+
+        /* ===== CARDIO FORM ===== */
+        .cardio-form-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            box-shadow: var(--shadow);
+        }
+        .cardio-form-wrap label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .cardio-form-wrap input,
+        .cardio-form-wrap select {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 0.88rem;
+            min-width: 80px;
+            transition: var(--transition);
+        }
+        .cardio-form-wrap input:focus,
+        .cardio-form-wrap select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
+        }
+        .cardio-form-wrap select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+        }
+
+        /* ===== ANALYTICS ===== */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: var(--font-mono);
+        }
+        .stat-card .stat-label {
+            font-size: 0.78rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        .chart-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .chart-container canvas {
+            max-height: 350px;
+        }
+        .chart-container select {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 9px 14px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 0.88rem;
+            margin-bottom: 14px;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+            min-width: 200px;
+        }
+        .no-data {
+            text-align: center;
+            color: var(--text3);
+            padding: 30px;
+            font-style: italic;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--success);
+            color: #000;
+            padding: 12px 22px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            z-index: 999;
+            animation: slideUp 0.3s ease, fadeOut 0.3s ease 1.7s forwards;
+            box-shadow: 0 6px 20px rgba(102, 187, 106, 0.5);
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .header-inner {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .nav-tabs {
+                padding: 0 10px 6px;
+                gap: 2px;
+            }
+            .nav-tab {
+                padding: 6px 11px;
+                font-size: 0.75rem;
+                border-radius: 16px;
+            }
+            .main-content {
+                padding: 12px 8px;
+            }
+            table {
+                font-size: 0.78rem;
+                min-width: 600px;
+            }
+            .cell-input {
+                font-size: 0.78rem;
+                padding: 6px 4px;
+            }
+            .cardio-form-wrap {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .cardio-form-wrap label {
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+            }
+            .btn {
+                padding: 8px 14px;
+                font-size: 0.8rem;
+            }
+            .section-title {
+                font-size: 1.1rem;
+            }
+            .stat-card .stat-value {
+                font-size: 1.5rem;
+            }
+        }
+        @media (max-width: 400px) {
+            .nav-tab {
+                padding: 5px 8px;
+                font-size: 0.7rem;
+                border-radius: 14px;
+            }
+            table {
+                min-width: 500px;
+            }
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        /* Quick-add pulse */
+        @keyframes pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(79, 195, 247, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(79, 195, 247, 0);
+            }
+        }
+        .btn-pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
 </head>
 <body>
-  <header class="app-header">
-    <div class="brand">
-      <h1>🏋️ FitTrack Pro</h1>
-      <p class="subtitle">5-Day Split • Auto-Log • Weekly Progress</p>
-    </div>
-    <div class="header-controls">
-      <button id="btn-reset-week" class="btn btn-secondary" title="Start new tracking week">🔄 New Week</button>
-      <button id="btn-theme" class="btn btn-secondary">☀️ Light Mode</button>
-    </div>
-  </header>
 
-  <main id="app-container">
-    <!-- Days Grid -->
-    <section id="days-section">
-      <div id="days-grid" class="grid-container"></div>
-    </section>
-
-    <!-- Weekly Report & Analytics -->
-    <section id="report-section" class="section-card">
-      <h2>📊 Weekly Progress Report</h2>
-      <div class="report-grid">
-        <div class="report-card">
-          <h3>📅 This Week</h3>
-          <div id="weekly-summary" class="summary-list"></div>
+    <!-- ===== HEADER ===== -->
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="app-logo">
+                <span>💪</span> FitTrack Pro
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline btn-sm" onclick="resetAllData()" title="Reset all data to defaults">🔄 Reset</button>
+            </div>
         </div>
-        <div class="report-card">
-          <h3>📈 Volume Trend</h3>
-          <div class="chart-wrapper">
-            <canvas id="volumeChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
+        <nav class="nav-tabs" id="nav-tabs">
+            <!-- Populated by JS -->
+        </nav>
+    </header>
 
-  <!-- Configure Day Modal -->
-  <dialog id="config-modal">
-    <form id="config-form">
-      <h3 id="config-title">Configure Exercises</h3>
-      <p class="hint">Select exercises to include in this day's schedule.</p>
-      <div id="config-list" class="checkbox-list"></div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" id="btn-cancel-config">Cancel</button>
-        <button type="submit" class="btn btn-accent">Save Schedule</button>
-      </div>
-    </form>
-  </dialog>
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content" id="app-content">
+        <!-- Populated by JS -->
+    </main>
 
-  <script>
-    // Inline theme init to prevent flash
-    const savedTheme = localStorage.getItem('fittrack_pro_v1_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  </script>
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div id="toast-container"></div>
+
+    <script>
+        // ============================================
+        // FitTrack Pro - Complete Workout Tracker
+        // No backend required. Uses localStorage.
+        // ============================================
+
+        // ===== UNIQUE ID GENERATOR =====
+        function generateId(prefix = 'id') {
+            return prefix + '-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+        }
+
+        // ===== STORAGE LAYER =====
+        const Storage = {
+            KEY: 'fittrack_pro_data',
+            save(state) {
+                try {
+                    const serialized = JSON.stringify(state);
+                    localStorage.setItem(this.KEY, serialized);
+                } catch (e) {
+                    console.warn('Failed to save to localStorage:', e);
+                    showToast('⚠️ Storage full. Please clear some data.', 'warning');
+                }
+            },
+            load() {
+                try {
+                    const raw = localStorage.getItem(this.KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && typeof parsed === 'object') {
+                            return parsed;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse localStorage data, resetting to defaults.');
+                }
+                return null;
+            },
+            clear() {
+                localStorage.removeItem(this.KEY);
+            }
+        };
+
+        // ===== DEFAULT DATA =====
+        function createDefaultState() {
+            return {
+                days: [
+                    createDay('day-push', 'Day 1 (Push)', [
+                        createExercise('Bench Press', 'Chest', 4, 8, 60),
+                        createExercise('Overhead Press', 'Shoulders', 3, 10, 40),
+                        createExercise('Incline Dumbbell Press', 'Upper Chest', 3, 12, 22),
+                        createExercise('Lateral Raises', 'Shoulders', 3, 15, 10),
+                        createExercise('Tricep Pushdowns', 'Triceps', 3, 12, 25),
+                    ]),
+                    createDay('day-pull', 'Day 2 (Pull)', [
+                        createExercise('Deadlift', 'Back', 4, 6, 100),
+                        createExercise('Pull-Ups', 'Back', 3, 10, 0),
+                        createExercise('Barbell Rows', 'Back', 3, 10, 60),
+                        createExercise('Face Pulls', 'Rear Delts', 3, 15, 15),
+                        createExercise('Barbell Curls', 'Biceps', 3, 12, 30),
+                    ]),
+                    createDay('day-legs', 'Day 3 (Legs & Abs)', [
+                        createExercise('Squats', 'Quads', 4, 8, 80),
+                        createExercise('Romanian Deadlift', 'Hamstrings', 3, 10, 60),
+                        createExercise('Leg Press', 'Quads', 3, 12, 100),
+                        createExercise('Calf Raises', 'Calves', 4, 15, 40),
+                        createExercise('Hanging Leg Raises', 'Abs', 3, 15, 0),
+                    ]),
+                    createDay('day-upper', 'Day 4 (Upper Body)', [
+                        createExercise('Bench Press', 'Chest', 4, 8, 60),
+                        createExercise('Pull-Ups', 'Back', 3, 10, 0),
+                        createExercise('Overhead Press', 'Shoulders', 3, 10, 40),
+                        createExercise('Barbell Rows', 'Back', 3, 10, 60),
+                        createExercise('Tricep Dips', 'Triceps', 3, 12, 0),
+                        createExercise('Barbell Curls', 'Biceps', 3, 12, 30),
+                    ]),
+                    createDay('day-lower', 'Day 5 (Lower Body)', [
+                        createExercise('Squats', 'Quads', 4, 8, 80),
+                        createExercise('Deadlift', 'Back/Hamstrings', 4, 6, 100),
+                        createExercise('Leg Press', 'Quads', 3, 12, 100),
+                        createExercise('Calf Raises', 'Calves', 4, 15, 40),
+                        createExercise('Plank', 'Abs', 3, 1, 0),
+                    ]),
+                ],
+                cardio: [],
+                activeTab: 'day-push',
+            };
+        }
+
+        function createDay(id, name, exercises) {
+            return { id, name, exercises: exercises || [] };
+        }
+
+        function createExercise(name, target, sets, reps, weight) {
+            return {
+                id: generateId('ex'),
+                name,
+                target,
+                sets,
+                reps,
+                weight,
+                completed: false,
+                history: [],
+            };
+        }
+
+        // ===== APP STATE =====
+        let state = Storage.load() || createDefaultState();
+
+        // Ensure state has all required keys (migration safety)
+        if (!state.days) state.days = createDefaultState().days;
+        if (!state.cardio) state.cardio = [];
+        if (!state.activeTab) state.activeTab = state.days[0]?.id || 'cardio';
+
+        // ===== SAVE HELPER =====
+        function saveState() {
+            Storage.save(state);
+        }
+
+        // Debounced auto-save
+        let saveTimeout;
+        function autoSave() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveState, 300);
+        }
+
+        // ===== TOAST =====
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            if (type === 'warning') toast.style.background = '#ffa726';
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 2100);
+        }
+
+        // ===== GET DAY BY ID =====
+        function getDay(dayId) {
+            return state.days.find(d => d.id === dayId);
+        }
+
+        // ===== NAVIGATION =====
+        function setActiveTab(tabId) {
+            state.activeTab = tabId;
+            saveState();
+            renderAll();
+        }
+
+        // ===== ADD NEW DAY =====
+        function addNewDay() {
+            const name = prompt('Enter name for the new workout day:', 'Day ' + (state.days.length + 1));
+            if (!name || !name.trim()) return;
+            const trimmed = name.trim();
+            const newDay = createDay(generateId('day'), trimmed, [
+                createExercise('', 'General', 3, 10, 0),
+            ]);
+            state.days.push(newDay);
+            state.activeTab = newDay.id;
+            saveState();
+            renderAll();
+            showToast('✅ New day added: ' + trimmed);
+        }
+
+        // ===== DELETE DAY =====
+        function deleteDay(dayId, event) {
+            event.stopPropagation();
+            if (state.days.length <= 1) {
+                showToast('⚠️ Cannot delete the last workout day.', 'warning');
+                return;
+            }
+            const day = getDay(dayId);
+            if (!day) return;
+            if (!confirm(`Delete "${day.name}" and all its exercises? This cannot be undone.`)) return;
+            state.days = state.days.filter(d => d.id !== dayId);
+            if (state.activeTab === dayId) {
+                state.activeTab = state.days[0]?.id || 'cardio';
+            }
+            saveState();
+            renderAll();
+            showToast('🗑️ Day deleted: ' + day.name);
+        }
+
+        // ===== EXERCISE OPERATIONS =====
+        function addExercise(dayId) {
+            const day = getDay(dayId);
+            if (!day) return;
+            const newEx = createExercise('', 'General', 3, 10, 0);
+            day.exercises.push(newEx);
+            saveState();
+            renderDayContent(dayId);
+            // Focus the new exercise name input
+            setTimeout(() => {
+                const input = document.getElementById('ex-name-' + newEx.id);
+                if (input) input.focus();
+            }, 100);
+            showToast('➕ Exercise added');
+        }
+
+        function deleteExercise(dayId, exId) {
+            const day = getDay(dayId);
+            if (!day) return;
+            day.exercises = day.exercises.filter(e => e.id !== exId);
+            saveState();
+            renderDayContent(dayId);
+        }
+
+        function updateExercise(dayId, exId, field, value) {
+            const day = getDay(dayId);
+            if (!day) return;
+            const ex = day.exercises.find(e => e.id === exId);
+            if (!ex) return;
+            if (field === 'sets' || field === 'reps' || field === 'weight') {
+                ex[field] = parseFloat(value) || 0;
+            } else {
+                ex[field] = value;
+            }
+            autoSave();
+        }
+
+        function toggleExerciseComplete(dayId, exId) {
+            const day = getDay(dayId);
+            if (!day) return;
+            const ex = day.exercises.find(e => e.id === exId);
+            if (!ex) return;
+            ex.completed = !ex.completed;
+            saveState();
+            renderDayContent(dayId);
+        }
+
+        // ===== LOG WORKOUT (save to history) =====
+        function logWorkout(dayId) {
+            const day = getDay(dayId);
+            if (!day) return;
+            const today = new Date().toISOString().split('T')[0];
+            let loggedCount = 0;
+            day.exercises.forEach(ex => {
+                if (ex.name && ex.name.trim()) {
+                    ex.history.push({
+                        date: today,
+                        sets: ex.sets,
+                        reps: ex.reps,
+                        weight: ex.weight,
+                    });
+                    ex.completed = false;
+                    loggedCount++;
+                }
+            });
+            if (loggedCount === 0) {
+                showToast('⚠️ No exercises to log. Add exercise names first.', 'warning');
+                return;
+            }
+            saveState();
+            renderDayContent(dayId);
+            showToast(`✅ Workout logged! ${loggedCount} exercises recorded for ${today}`);
+        }
+
+        // ===== DUPLICATE PREVIOUS WORKOUT =====
+        function duplicatePrevious(dayId) {
+            const day = getDay(dayId);
+            if (!day) return;
+            let restored = 0;
+            day.exercises.forEach(ex => {
+                if (ex.history && ex.history.length > 0) {
+                    const last = ex.history[ex.history.length - 1];
+                    ex.sets = last.sets;
+                    ex.reps = last.reps;
+                    ex.weight = last.weight;
+                    ex.completed = false;
+                    restored++;
+                }
+            });
+            if (restored === 0) {
+                showToast('⚠️ No previous workout history found for this day.', 'warning');
+                return;
+            }
+            saveState();
+            renderDayContent(dayId);
+            showToast(`🔄 Restored last session's values for ${restored} exercises`);
+        }
+
+        // ===== CARDIO OPERATIONS =====
+        function addCardioEntry(type, duration, distance, calories, date) {
+            const entry = {
+                id: generateId('cardio'),
+                type,
+                duration: parseFloat(duration) || 0,
+                distance: distance ? parseFloat(distance) : null,
+                calories: calories ? parseFloat(calories) : null,
+                date: date || new Date().toISOString().split('T')[0],
+            };
+            state.cardio.unshift(entry); // newest first
+            saveState();
+            renderCardioContent();
+            showToast('🏃 Cardio session logged!');
+        }
+
+        function deleteCardioEntry(entryId) {
+            state.cardio = state.cardio.filter(c => c.id !== entryId);
+            saveState();
+            renderCardioContent();
+        }
+
+        // ===== ANALYTICS =====
+        function getWeeklyStats() {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - mondayOffset);
+            monday.setHours(0, 0, 0, 0);
+            const mondayStr = monday.toISOString().split('T')[0];
+            const todayStr = now.toISOString().split('T')[0];
+
+            let totalVolume = 0;
+            let workoutsLogged = 0;
+            const muscleGroups = {};
+
+            state.days.forEach(day => {
+                day.exercises.forEach(ex => {
+                    if (ex.history && ex.history.length > 0) {
+                        ex.history.forEach(h => {
+                            if (h.date >= mondayStr && h.date <= todayStr) {
+                                totalVolume += (h.sets || 0) * (h.reps || 0) * (h.weight || 0);
+                                workoutsLogged++;
+                                const target = ex.target || 'General';
+                                muscleGroups[target] = (muscleGroups[target] || 0) + 1;
+                            }
+                        });
+                    }
+                });
+            });
+
+            let totalCardioMin = 0;
+            let cardioSessions = 0;
+            state.cardio.forEach(c => {
+                if (c.date >= mondayStr && c.date <= todayStr) {
+                    totalCardioMin += c.duration || 0;
+                    cardioSessions++;
+                }
+            });
+
+            let topMuscle = 'N/A';
+            let topCount = 0;
+            Object.entries(muscleGroups).forEach(([group, count]) => {
+                if (count > topCount) {
+                    topCount = count;
+                    topMuscle = group;
+                }
+            });
+
+            return {
+                totalVolume,
+                workoutsLogged,
+                totalCardioMin,
+                cardioSessions,
+                topMuscle,
+                weekStart: mondayStr,
+                weekEnd: todayStr,
+            };
+        }
+
+        function getAllExerciseNames() {
+            const names = new Set();
+            state.days.forEach(day => {
+                day.exercises.forEach(ex => {
+                    if (ex.name && ex.name.trim()) {
+                        names.add(ex.name.trim());
+                    }
+                });
+            });
+            return Array.from(names).sort();
+        }
+
+        function getExerciseHistoryByName(exerciseName) {
+            const allHistory = [];
+            state.days.forEach(day => {
+                day.exercises.forEach(ex => {
+                    if (ex.name && ex.name.trim().toLowerCase() === exerciseName.toLowerCase()) {
+                        if (ex.history && ex.history.length > 0) {
+                            ex.history.forEach(h => {
+                                allHistory.push({ ...h, dayName: day.name });
+                            });
+                        }
+                    }
+                });
+            });
+            // Sort by date
+            allHistory.sort((a, b) => a.date.localeCompare(b.date));
+            // Deduplicate by date (keep the one with highest weight if multiple on same date)
+            const deduped = [];
+            const seenDates = new Set();
+            allHistory.forEach(h => {
+                const key = h.date;
+                if (!seenDates.has(key)) {
+                    seenDates.add(key);
+                    deduped.push(h);
+                } else {
+                    // Replace if this entry has higher weight
+                    const existing = deduped.find(d => d.date === key);
+                    if (existing && h.weight > existing.weight) {
+                        Object.assign(existing, h);
+                    }
+                }
+            });
+            return deduped;
+        }
+
+        // ===== RENDER ALL =====
+        function renderAll() {
+            renderNav();
+            const activeTab = state.activeTab;
+            if (activeTab === 'cardio') {
+                renderCardioContent();
+            } else if (activeTab === 'analytics') {
+                renderAnalyticsContent();
+            } else if (getDay(activeTab)) {
+                renderDayContent(activeTab);
+            } else {
+                // Fallback
+                state.activeTab = state.days[0]?.id || 'cardio';
+                saveState();
+                renderAll();
+            }
+        }
+
+        // ===== RENDER NAVIGATION =====
+        function renderNav() {
+            const navContainer = document.getElementById('nav-tabs');
+            let html = '';
+            state.days.forEach(day => {
+                const isActive = state.activeTab === day.id;
+                html += `
+                    <div class="nav-tab ${isActive ? 'active' : ''}" onclick="setActiveTab('${day.id}')" title="${day.name}">
+                        ${escapeHTML(day.name)}
+                        <span class="delete-day" onclick="deleteDay('${day.id}', event)" title="Delete this day">×</span>
+                    </div>`;
+            });
+            html += `
+                <div class="nav-tab add-day-tab" onclick="addNewDay()" title="Add new workout day">+</div>
+                <div class="nav-tab ${state.activeTab === 'cardio' ? 'active' : ''}" onclick="setActiveTab('cardio')">🏃 Cardio</div>
+                <div class="nav-tab ${state.activeTab === 'analytics' ? 'active' : ''}" onclick="setActiveTab('analytics')">📊 Analytics</div>
+            `;
+            navContainer.innerHTML = html;
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ===== RENDER DAY CONTENT =====
+        function renderDayContent(dayId) {
+            const day = getDay(dayId);
+            if (!day) {
+                document.getElementById('app-content').innerHTML =
+                    '<p class="no-data">Day not found. Please select a valid day.</p>';
+                return;
+            }
+            const container = document.getElementById('app-content');
+            let html = `
+                <div class="section-title">
+                    ${escapeHTML(day.name)}
+                    <span class="badge">${day.exercises.length} exercises</span>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                    <button class="btn btn-outline btn-sm" onclick="addExercise('${dayId}')">➕ Add Exercise</button>
+                    <button class="btn btn-outline btn-sm" onclick="duplicatePrevious('${dayId}')" title="Restore last logged sets/reps/weight">📋 Duplicate Previous</button>
+                    <button class="btn btn-success btn-sm btn-pulse" onclick="logWorkout('${dayId}')">✅ Log Workout</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Exercise</th>
+                                <th>Target</th>
+                                <th>Sets</th>
+                                <th>Reps</th>
+                                <th>Weight (kg)</th>
+                                <th>✓</th>
+                                <th class="col-actions"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            if (day.exercises.length === 0) {
+                html += `
+                    <tr>
+                        <td colspan="7" class="no-data" style="padding:20px;">
+                            No exercises yet. Click "Add Exercise" to get started.
+                        </td>
+                    </tr>`;
+            } else {
+                day.exercises.forEach(ex => {
+                    const rowClass = ex.completed ? 'completed-row' : '';
+                    html += `
+                        <tr class="${rowClass}" id="row-${ex.id}">
+                            <td>
+                                <input
+                                    class="cell-input name-input"
+                                    id="ex-name-${ex.id}"
+                                    type="text"
+                                    value="${escapeHTML(ex.name)}"
+                                    placeholder="Exercise name"
+                                    onchange="updateExercise('${dayId}', '${ex.id}', 'name', this.value)"
+                                    oninput="autoSave()"
+                                >
+                            </td>
+                            <td>
+                                <input
+                                    class="cell-input target-input"
+                                    type="text"
+                                    value="${escapeHTML(ex.target)}"
+                                    placeholder="Target muscle"
+                                    onchange="updateExercise('${dayId}', '${ex.id}', 'target', this.value)"
+                                    oninput="autoSave()"
+                                >
+                            </td>
+                            <td>
+                                <input
+                                    class="cell-input number-input"
+                                    type="number"
+                                    min="0"
+                                    max="99"
+                                    value="${ex.sets}"
+                                    onchange="updateExercise('${dayId}', '${ex.id}', 'sets', this.value)"
+                                    oninput="autoSave()"
+                                >
+                            </td>
+                            <td>
+                                <input
+                                    class="cell-input number-input"
+                                    type="number"
+                                    min="0"
+                                    max="999"
+                                    value="${ex.reps}"
+                                    onchange="updateExercise('${dayId}', '${ex.id}', 'reps', this.value)"
+                                    oninput="autoSave()"
+                                >
+                            </td>
+                            <td>
+                                <input
+                                    class="cell-input weight-input"
+                                    type="number"
+                                    min="0"
+                                    max="9999"
+                                    step="0.5"
+                                    value="${ex.weight}"
+                                    onchange="updateExercise('${dayId}', '${ex.id}', 'weight', this.value)"
+                                    oninput="autoSave()"
+                                >
+                            </td>
+                            <td class="check-cell">
+                                <input
+                                    class="custom-checkbox"
+                                    type="checkbox"
+                                    ${ex.completed ? 'checked' : ''}
+                                    onchange="toggleExerciseComplete('${dayId}', '${ex.id}')"
+                                    title="Mark as completed"
+                                >
+                            </td>
+                            <td style="text-align:center;">
+                                <button class="btn-delete-ex" onclick="deleteExercise('${dayId}', '${ex.id}')" title="Remove exercise">×</button>
+                            </td>
+                        </tr>`;
+                });
+            }
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                <p style="font-size:0.75rem;color:var(--text3);margin-top:4px;">
+                    💡 Click any value to edit inline. Changes auto-save. Check ✓ when done, then click <strong>Log Workout</strong> to record progress.
+                </p>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // ===== RENDER CARDIO CONTENT =====
+        function renderCardioContent() {
+            const container = document.getElementById('app-content');
+            let html = `
+                <div class="section-title">🏃 Cardio Tracker</div>
+                <div class="cardio-form-wrap" id="cardio-form">
+                    <label>Type
+                        <select id="cardio-type">
+                            <option value="Running">Running</option>
+                            <option value="Cycling">Cycling</option>
+                            <option value="Stairmaster">Stairmaster</option>
+                            <option value="Walking">Walking</option>
+                            <option value="Swimming">Swimming</option>
+                            <option value="Rowing">Rowing</option>
+                            <option value="Elliptical">Elliptical</option>
+                        </select>
+                    </label>
+                    <label>Duration (min)
+                        <input type="number" id="cardio-duration" min="1" max="999" value="30" placeholder="Min">
+                    </label>
+                    <label>Distance (km)
+                        <input type="number" id="cardio-distance" min="0" max="999" step="0.1" placeholder="Optional">
+                    </label>
+                    <label>Calories
+                        <input type="number" id="cardio-calories" min="0" max="9999" placeholder="Optional">
+                    </label>
+                    <label>Date
+                        <input type="date" id="cardio-date" value="${new Date().toISOString().split('T')[0]}">
+                    </label>
+                    <button class="btn btn-primary btn-sm" onclick="submitCardio()">➕ Log Session</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Duration (min)</th>
+                                <th>Distance (km)</th>
+                                <th>Calories</th>
+                                <th class="col-actions"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            if (state.cardio.length === 0) {
+                html += `<tr><td colspan="6" class="no-data" style="padding:20px;">No cardio sessions logged yet.</td></tr>`;
+            } else {
+                state.cardio.forEach(c => {
+                    html += `
+                        <tr>
+                            <td>${escapeHTML(c.date)}</td>
+                            <td>${escapeHTML(c.type)}</td>
+                            <td>${c.duration}</td>
+                            <td>${c.distance !== null ? c.distance : '—'}</td>
+                            <td>${c.calories !== null ? c.calories : '—'}</td>
+                            <td style="text-align:center;">
+                                <button class="btn-delete-ex" onclick="deleteCardioEntry('${c.id}')" title="Delete entry">×</button>
+                            </td>
+                        </tr>`;
+                });
+            }
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        function submitCardio() {
+            const type = document.getElementById('cardio-type').value;
+            const duration = document.getElementById('cardio-duration').value;
+            const distance = document.getElementById('cardio-distance').value;
+            const calories = document.getElementById('cardio-calories').value;
+            const date = document.getElementById('cardio-date').value;
+            if (!duration || parseFloat(duration) <= 0) {
+                showToast('⚠️ Please enter a valid duration.', 'warning');
+                return;
+            }
+            addCardioEntry(type, duration, distance || null, calories || null, date);
+            // Clear optional fields
+            document.getElementById('cardio-distance').value = '';
+            document.getElementById('cardio-calories').value = '';
+            document.getElementById('cardio-duration').value = '30';
+        }
+
+        // ===== RENDER ANALYTICS CONTENT =====
+        function renderAnalyticsContent() {
+            const container = document.getElementById('app-content');
+            const stats = getWeeklyStats();
+            const exerciseNames = getAllExerciseNames();
+
+            let html = `
+                <div class="section-title">📊 Weekly Summary</div>
+                <p style="font-size:0.8rem;color:var(--text3);margin-bottom:16px;">
+                    ${stats.weekStart} to ${stats.weekEnd}
+                </p>
+                <div class="analytics-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.totalVolume.toLocaleString()}</div>
+                        <div class="stat-label">Total Volume (kg)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.workoutsLogged}</div>
+                        <div class="stat-label">Exercises Logged</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.totalCardioMin}</div>
+                        <div class="stat-label">Cardio Minutes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.topMuscle}</div>
+                        <div class="stat-label">Top Muscle Group</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <label style="font-weight:600;display:block;margin-bottom:6px;">📈 Exercise Progress (Weight Over Time)</label>
+                    <select id="exercise-select" onchange="renderProgressChart()">
+                        <option value="">-- Select an exercise --</option>
+            `;
+
+            exerciseNames.forEach(name => {
+                html += `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`;
+            });
+
+            html += `
+                    </select>
+                    <div id="chart-wrapper" style="position:relative;height:300px;">
+                        <canvas id="progress-chart"></canvas>
+                    </div>
+                    <p id="chart-no-data" class="no-data" style="display:none;">No history data for this exercise yet. Log workouts to see progress!</p>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            // If there's a previously selected exercise, try to restore it
+            const savedEx = state._lastSelectedExercise;
+            if (savedEx && exerciseNames.includes(savedEx)) {
+                document.getElementById('exercise-select').value = savedEx;
+                setTimeout(() => renderProgressChart(), 200);
+            }
+        }
+
+        let progressChartInstance = null;
+
+        function renderProgressChart() {
+            const select = document.getElementById('exercise-select');
+            const chartWrapper = document.getElementById('chart-wrapper');
+            const noDataMsg = document.getElementById('chart-no-data');
+            const canvas = document.getElementById('progress-chart');
+
+            if (!select || !canvas) return;
+
+            const exerciseName = select.value;
+            if (!exerciseName) {
+                if (progressChartInstance) {
+                    progressChartInstance.destroy();
+                    progressChartInstance = null;
+                }
+                chartWrapper.style.display = 'none';
+                if (noDataMsg) noDataMsg.style.display = 'block';
+                return;
+            }
+
+            // Save selection
+            state._lastSelectedExercise = exerciseName;
+            saveState();
+
+            const history = getExerciseHistoryByName(exerciseName);
+
+            if (history.length === 0) {
+                chartWrapper.style.display = 'none';
+                if (noDataMsg) noDataMsg.style.display = 'block';
+                if (progressChartInstance) {
+                    progressChartInstance.destroy();
+                    progressChartInstance = null;
+                }
+                return;
+            }
+
+            chartWrapper.style.display = 'block';
+            if (noDataMsg) noDataMsg.style.display = 'none';
+
+            const labels = history.map(h => h.date);
+            const weightData = history.map(h => h.weight);
+            const volumeData = history.map(h => (h.sets || 0) * (h.reps || 0) * (h.weight || 0));
+
+            if (progressChartInstance) {
+                progressChartInstance.destroy();
+                progressChartInstance = null;
+            }
+
+            const ctx = canvas.getContext('2d');
+            progressChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Weight (kg)',
+                        data: weightData,
+                        borderColor: '#4fc3f7',
+                        backgroundColor: 'rgba(79,195,247,0.15)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#4fc3f7',
+                        yAxisID: 'y',
+                    }, {
+                        label: 'Volume (sets×reps×kg)',
+                        data: volumeData,
+                        borderColor: '#ffa726',
+                        backgroundColor: 'rgba(255,167,38,0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#ffa726',
+                        borderDash: [5, 3],
+                        yAxisID: 'y1',
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#a0a0b8',
+                                usePointStyle: true,
+                                padding: 20,
+                            },
+                        },
+                        tooltip: {
+                            backgroundColor: '#1a1a2e',
+                            borderColor: '#2a2a3e',
+                            borderWidth: 1,
+                            titleColor: '#e8e8e8',
+                            bodyColor: '#e8e8e8',
+                        },
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#707088', maxTicksLimit: 10 },
+                            grid: { color: 'rgba(42,42,62,0.5)' },
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'Weight (kg)', color: '#4fc3f7' },
+                            ticks: { color: '#4fc3f7' },
+                            grid: { color: 'rgba(42,42,62,0.5)' },
+                            beginAtZero: false,
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: 'Volume', color: '#ffa726' },
+                            ticks: { color: '#ffa726' },
+                            grid: { drawOnChartArea: false },
+                            beginAtZero: false,
+                        },
+                    },
+                },
+            });
+        }
+
+        // ===== RESET ALL DATA =====
+        function resetAllData() {
+            if (!confirm('⚠️ This will delete ALL your data and restore defaults. Are you sure?')) return;
+            Storage.clear();
+            state = createDefaultState();
+            saveState();
+            renderAll();
+            showToast('🔄 All data reset to defaults');
+        }
+
+        // ===== INITIALIZATION =====
+        function init() {
+            // Ensure the active tab is valid
+            if (state.activeTab !== 'cardio' && state.activeTab !== 'analytics' && !getDay(state.activeTab)) {
+                state.activeTab = state.days[0]?.id || 'cardio';
+                saveState();
+            }
+            renderAll();
+        }
+
+        // ===== KEYBOARD SHORTCUTS =====
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+S or Cmd+S to force save
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveState();
+                showToast('💾 Data saved!');
+            }
+        });
+
+        // ===== START APP =====
+        init();
+        console.log('💪 FitTrack Pro initialized!');
+        console.log('   - All data stored in browser localStorage');
+        console.log('   - Press Ctrl+S to force save');
+        console.log('   - Select "Analytics" tab for progress charts');
+        console.log('   - Click "Log Workout" to record history');
+    </script>
 </body>
 </html>
